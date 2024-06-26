@@ -66,6 +66,11 @@ def removeDuplicateTemplates(
     return unique_templates
 
 
+# Inputs:
+#   1. templates: An array of the n most similar templates sorted by ascending similarity index
+#   2. file_name: output file name
+# Output:
+#   1. A .xlsx file containing the n templates ranked from most similar (top) to least similar (bottom)
 def createFileForNMostSimilarTemplates(
     templates: List[Tuple[float, str, str]], file_name: str
 ) -> None:
