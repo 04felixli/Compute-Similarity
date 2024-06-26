@@ -18,15 +18,20 @@ VIEW_UNIQUE_TEMPLATES = bool(os.getenv("VIEW_UNIQUE_TEMPLATES"))
 
 
 def main():
-    min_heap = []  # stores (-similarity index, template1, template2)
+    max_heap = []  # stores (-similarity index, template1, template2)
     templates = removeDuplicateTemplates(
         INPUT_PATH, TEMPLATE_COLUMN_NAME, VIEW_UNIQUE_TEMPLATES
     )
     for i in range(len(templates)):
         for j in range(i + 1, len(templates)):
             edit_distance = computeEditDistance(templates[i][1], templates[j][1])
-            heapq.heappush(min_heap, (edit_distance, templates[i][0], templates[j][0]))
-    n_most_similar_templates = getNMostSimilarTemplates(N_VALUE, min_heap)
+            normalized_edit_distance = normalizeEditDistance(
+                templates[i][1], templates[j][1], edit_distance
+            )
+            heapq.heappush(
+                max_heap, (-normalized_edit_distance, templates[i][0], templates[j][0])
+            )
+    n_most_similar_templates = getNMostSimilarTemplates(N_VALUE, max_heap)
     createFileForNMostSimilarTemplates(n_most_similar_templates, OUTPUT_PATH)
 
 
@@ -89,21 +94,31 @@ def createFileForNMostSimilarTemplates(
 
 # Inputs:
 #   1. n: An integer representing the number of most similar templates to return
-#   2. min_heap: The max heap containing pairs of log templates and their similarity index
+#   2. max_heap: The max heap containing pairs of log templates and their similarity index
 # Output:
 #   1. An array of the n most similar templates based on similarity index
 def getNMostSimilarTemplates(
-    n: int, min_heap: List[Tuple[float, str, str]]
+    n: int, max_heap: List[Tuple[float, str, str]]
 ) -> List[Tuple[float, str, str]]:
     res = []
-    temp_heap = min_heap[:]
+    temp_heap = max_heap[:]
     heapq.heapify(temp_heap)
 
     for _ in range(min(n, len(temp_heap))):
         similarity_index, template1, template2 = heapq.heappop(temp_heap)
-        res.append((similarity_index, template1, template2))
+        res.append((-similarity_index, template1, template2))
 
     return res
+
+
+# Inputs:
+#   1. str1 and str2: two log templates with whitespaces removed
+# Output:
+#   1. A float from 0 to 1 (inclusive) representing the normalized edit distance between the two templates
+#       - closer to 0 means not similar
+#       - closer to 1 means similar
+def normalizeEditDistance(str1: str, str2: str, edit_distance: int) -> float:
+    return 1 - (edit_distance) / (max(len(str1), len(str2)))
 
 
 # Implementation of Levenshtein Distance
